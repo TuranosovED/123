@@ -1,4 +1,3 @@
-index.html:
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,105 +5,54 @@ index.html:
     <title>Testing...</title>
 </head>
 <body>
-    
+    <p>Пароль<p>
     <form method="post">
-	    <p>Номер зачётной книжки<p>
-	    <input type="text" id="Record_book" name="Record_book" value="">
-        <p>Фамилия<p></p>
-        <input type="text" id="Second_Name" name="Second_Name" value="">
-        <p>Имя<p></p>
-        <input type="text" id="First_Name" name="First_Name" value="">
-        <p>Отчество<p></p>
-        <input type="text" id="Third_Name" name="Third_Name" value="">
-        <p>Возраст<p></p>
-        <input type="number" id="Age" name="Age" value="">
-        <p>Факультет<p></p>
-        <input type="text" id="Faculty" name="Faculty" value="">
-        <p>Номер курса<p></p>
-        <input type="text" id="course" name="course" value="">
-        <input type ="submit",value="OK">
-    </form>
-    <h2>Внесеные пользователи: {{ Bd }} </h2>
+    	<input type="string" id="String" name="String" value="">
+           <p>Шаг<p>
+           <input type="number" id="Number" name="Number" value="">
+       </form>
+    <h2>Password: {{ password }} </h2>
 </body>
 </html>
 
 
-app_setup2.py:
 
-from flask import Flask
-app = Flask(__name__)  
 
-db_setup2.py:
 
-from flask_sqlalchemy import SQLAlchemy
-import os
-from app_setup2 import app
+from flask import Flask, render_template, request
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///iu4.sqlite.db" 
-db = SQLAlchemy(app) 
-
-tables2.py:
-
-from db_setup2 import db
-from app_setup2 import app
-class students (db.Model):         
-    id = db.Column(db.Integer, 
-                   primary_key=True, autoincrement=True) 
-    record_book_number = db.Column(db.Integer, 
-                                   unique=False, 
-                                   nullable=False)
-                                
-    Second_Name = db.Column(db.String, 
-                         unique=False, 
-                         nullable=False)
-    First_Name = db.Column(db.String, 
-                         unique=False, 
-                         nullable=False)
-    Third_Name = db.Column(db.String, 
-                         unique=False, 
-                         nullable=False)
-    Age = db.Column(db.Integer, 
-                         unique=False, 
-                         nullable=False)
-    faculty = db.Column(db.String, 
-                         unique=False, 
-                         nullable=False)
-    course = db.Column(db.Integer, 
-                         unique=False, 
-                         nullable=False) 
-    @staticmethod 
-    def add(number, second,first,third,age,faculty,cn):
-        with app.app_context(): 
-            student = students (record_book_number = number,Second_Name = second, First_Name = first, Third_Name = third, Age =age , faculty = faculty,course =cn) #создаем объект класса от класса таблицы
-            db.session.add(student)
-            db.session.commit()
-
-app2.py:
-
-from db_setup2 import db
-from tables2 import *
-from app_setup2 import app
-from flask import render_template,request
-
+app = Flask(__name__)
+crypt = None
+a = 0
 @app.route('/', methods=['GET', 'POST'])
 def test():
-    lis ={}
     global a
-    rbn = request.form.get("Record_book")
-    sn = request.form.get("Second_Name")
-    fn = request.form.get("First_Name")
-    tn = request.form.get("Third_Name")
-    age = request.form.get("Age")
-    faculty = request.form.get("Faculty")
-    cource = request.form.get("course")
-    if((rbn  is not None )and (sn  is not None )and (fn  is not None) and (tn  is not None) and (age  is not None) and (faculty  is not None) and (cource is not None)):
-        students.add(rbn,sn,fn,tn,age,faculty,cource)
-        res = db.engine.execute('SELECT * FROM students;')
-        lis = res.fetchall()
-    return render_template("index.html", Bd=lis)
-with app.app_context():
-    db.create_all() 
+    number = request.form.get("Number")
+    string = request.form.get("String")
+    if number is not None:
+        a = int(number)
+    if string is not None:
+        i = 0
+        crypt = ""
+        while i < len(string):
+            if string[i] == " ":
+                    crypt +=" "
+            if( (ord(string[i]) in range(55,91)) or (ord(string[i]) in range(97,123)) ):
+                if(ord(string[i]) in range(55,91) and ord(string[i])+a > 90):
+                    crypt+=chr(ord(string[i])-91+55+a)
+                elif(ord(string[i]) in range(97,123) and ord(string[i])+a > 122):
+                    crypt+=chr(ord(string[i])-123+97+a)
+                elif(ord(string[i])+a in range(55,91) or ord(string[i])+a in range(97,123)):
+                    crypt+=chr(ord(string[i])+a)
+                else:
+                    crypt+=string[i]
+            i+=1
+                
+    
+            
+    else:
+        crypt = None
+    return render_template("index.html", password=crypt)
 
 if __name__ == '__main__':
-    app.debug = False
     app.run()
